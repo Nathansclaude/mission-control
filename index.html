@@ -9,506 +9,325 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  /* ============================================================
-     CONFIG — these are safe to be public (publishable key only)
-     ============================================================ */
   :root{
-    --ink:#0B0E14;        /* instrument-panel background */
-    --panel:#141A24;      /* module surface */
-    --panel-2:#1B2330;    /* raised surface */
-    --line:#27313F;       /* hairline borders */
-    --line-soft:#1E2632;
-    --text:#E8EDF4;       /* primary readout */
-    --muted:#8A97A8;      /* secondary readout */
-    --faint:#5A6675;      /* tertiary */
-    --signal:#F5B748;     /* live signal — amber */
-    --online:#4DD4C4;     /* healthy / done — teal */
-    --kill:#E5614D;       /* danger / kill */
-    --radius:14px;
+    --ink:#0B0E14;--panel:#141A24;--panel-2:#1B2330;--line:#27313F;--line-soft:#1E2632;
+    --text:#E8EDF4;--muted:#8A97A8;--faint:#5A6675;--signal:#F5B748;--online:#4DD4C4;
+    --kill:#E5614D;--radius:14px;--ease:cubic-bezier(.22,1,.36,1);
   }
-
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    background:var(--ink);
-    color:var(--text);
-    font-family:"Space Grotesk",system-ui,-apple-system,sans-serif;
-    -webkit-font-smoothing:antialiased;
-    min-height:100vh;
+    background:var(--ink);color:var(--text);
+    font-family:"Space Grotesk",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;
     background-image:
       radial-gradient(900px 500px at 85% -10%, rgba(245,183,72,.06), transparent 60%),
       radial-gradient(700px 500px at -5% 110%, rgba(77,212,196,.05), transparent 60%);
   }
   .mono{font-family:"IBM Plex Mono",ui-monospace,monospace;}
-
-  /* ---------- password gate ---------- */
-  #gate{
-    position:fixed;inset:0;z-index:50;
-    background:var(--ink);
-    display:flex;align-items:center;justify-content:center;
-    padding:24px;
-  }
-  .gate-card{
-    width:100%;max-width:360px;text-align:center;
-  }
-  .gate-mark{
-    font-family:"IBM Plex Mono",monospace;
-    font-size:12px;letter-spacing:.32em;color:var(--signal);
-    text-transform:uppercase;margin-bottom:18px;
-  }
-  .gate-card h1{
-    font-size:22px;font-weight:600;margin:0 0 4px;letter-spacing:-.01em;
-  }
-  .gate-card p{color:var(--muted);font-size:13px;margin:0 0 22px;}
-  .gate-card input{
-    width:100%;padding:13px 15px;border-radius:10px;
-    background:var(--panel);border:1px solid var(--line);
-    color:var(--text);font-size:15px;font-family:"IBM Plex Mono",monospace;
-    text-align:center;letter-spacing:.1em;outline:none;
-  }
-  .gate-card input:focus{border-color:var(--signal);}
-  .gate-card button{
-    width:100%;margin-top:12px;padding:13px;border-radius:10px;
-    background:var(--signal);color:#1a1407;border:none;
-    font-family:"Space Grotesk",sans-serif;font-size:14px;font-weight:600;
-    cursor:pointer;letter-spacing:.02em;
-  }
-  .gate-card button:active{transform:translateY(1px);}
-  .gate-err{color:var(--kill);font-size:12px;height:16px;margin-top:10px;font-family:"IBM Plex Mono",monospace;}
-
-  /* ---------- shell ---------- */
-  .wrap{max-width:880px;margin:0 auto;padding:22px 18px 80px;}
-
-  header.top{
-    display:flex;align-items:center;justify-content:space-between;
-    gap:14px;flex-wrap:wrap;
-    padding-bottom:18px;border-bottom:1px solid var(--line-soft);
-  }
-  .brand{display:flex;align-items:baseline;gap:10px;}
-  .brand .logo{
-    font-family:"IBM Plex Mono",monospace;font-weight:600;
-    font-size:17px;letter-spacing:.04em;
-  }
+  .wrap{max-width:900px;margin:0 auto;padding:22px 18px 80px;}
+  .reveal{opacity:0;transform:translateY(10px);animation:rise .6s var(--ease) forwards;}
+  @keyframes rise{to{opacity:1;transform:none;}}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding-bottom:18px;border-bottom:1px solid var(--line-soft);}
+  .brand .logo{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:17px;letter-spacing:.04em;}
   .brand .logo .v{color:var(--signal);}
-  .brand .sub{
-    font-family:"IBM Plex Mono",monospace;font-size:10.5px;
-    letter-spacing:.28em;color:var(--faint);text-transform:uppercase;
-  }
-  .status-pill{
-    display:flex;align-items:center;gap:8px;
-    font-family:"IBM Plex Mono",monospace;font-size:11px;
-    color:var(--muted);padding:6px 11px;border:1px solid var(--line);
-    border-radius:999px;background:var(--panel);
-  }
-  .dot{width:7px;height:7px;border-radius:50%;background:var(--online);box-shadow:0 0 0 0 rgba(77,212,196,.5);}
+  .brand .sub{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.28em;color:var(--faint);text-transform:uppercase;margin-top:3px;}
+  .status-pill{display:flex;align-items:center;gap:8px;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--panel);}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--online);}
   .dot.live{animation:pulse 2.4s infinite;}
   .dot.off{background:var(--faint);}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(77,212,196,.45);}70%{box-shadow:0 0 0 7px rgba(77,212,196,0);}100%{box-shadow:0 0 0 0 rgba(77,212,196,0);}}
-
-  /* ---------- readiness gauge (signature) ---------- */
-  .readiness{
-    margin:24px 0 8px;padding:22px 22px 20px;
-    background:linear-gradient(180deg,var(--panel),var(--panel) 60%, #11161f);
-    border:1px solid var(--line);border-radius:var(--radius);
-    position:relative;overflow:hidden;
-  }
-  .readiness .eyebrow{
-    font-family:"IBM Plex Mono",monospace;font-size:10.5px;
-    letter-spacing:.26em;color:var(--faint);text-transform:uppercase;
-  }
-  .readiness .big{
-    display:flex;align-items:flex-end;gap:12px;margin-top:6px;
-  }
-  .readiness .pct{
-    font-size:54px;line-height:.95;font-weight:600;letter-spacing:-.03em;
-    font-variant-numeric:tabular-nums;
-  }
-  .readiness .pct small{font-size:24px;color:var(--muted);font-weight:500;}
-  .readiness .count{
-    font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);
-    padding-bottom:8px;
-  }
-  .bar{
-    margin-top:16px;height:8px;border-radius:999px;
-    background:var(--line-soft);overflow:hidden;
-  }
-  .bar > span{
-    display:block;height:100%;width:0%;border-radius:999px;
-    background:linear-gradient(90deg,var(--signal),var(--online));
-    transition:width .7s cubic-bezier(.22,1,.36,1);
-  }
-
-  /* ---------- phases ---------- */
-  .phase{margin-top:26px;}
-  .phase-head{
-    display:flex;align-items:center;gap:12px;margin-bottom:12px;
-  }
-  .phase-num{
-    font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;
-    color:var(--signal);border:1px solid var(--line);border-radius:7px;
-    padding:4px 8px;letter-spacing:.05em;min-width:42px;text-align:center;
-  }
+  .map{margin:22px 0 8px;padding:22px 18px 18px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+  .map-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+  .map-eyebrow{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.26em;color:var(--faint);text-transform:uppercase;}
+  .map-read{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);}
+  .map-read b{color:var(--text);font-weight:600;}
+  .track{position:relative;display:flex;justify-content:space-between;gap:4px;padding:6px 6px 0;}
+  .track-line{position:absolute;left:34px;right:34px;top:24px;height:2px;background:var(--line);overflow:hidden;border-radius:2px;}
+  .track-line > span{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--online),var(--signal));transition:width 1s var(--ease);}
+  .node{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;cursor:pointer;min-width:0;}
+  .node-ring{position:relative;width:36px;height:36px;}
+  .node-ring svg{transform:rotate(-90deg);display:block;}
+  .node-ring .track-c{stroke:var(--line);}
+  .node-ring .fill-c{stroke:var(--online);stroke-linecap:round;transition:stroke-dashoffset .9s var(--ease);}
+  .node-core{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;color:var(--faint);transition:color .3s;}
+  .node.active .node-ring .fill-c{stroke:var(--signal);}
+  .node.active .node-core{color:var(--signal);}
+  .node.active::before{content:"";position:absolute;top:-3px;width:42px;height:42px;border-radius:50%;border:1.5px solid var(--signal);opacity:0;animation:halo 2.2s var(--ease) infinite;}
+  @keyframes halo{0%{opacity:.55;transform:scale(.85);}70%,100%{opacity:0;transform:scale(1.18);}}
+  .node.done .node-core{color:var(--online);}
+  .node-label{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.04em;color:var(--faint);text-align:center;line-height:1.25;max-width:78px;transition:color .3s;}
+  .node.active .node-label{color:var(--muted);}
+  .node.done .node-label{color:var(--muted);}
+  .node:hover .node-label{color:var(--text);}
+  .node-done-fill{position:absolute;inset:0;border-radius:50%;background:var(--online);display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.6);transition:all .4s var(--ease);}
+  .node.done .node-done-fill{opacity:1;transform:scale(1);}
+  .node-done-fill svg{width:16px;height:16px;}
+  .readiness{margin-top:14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+  .readiness .pct{font-size:30px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;font-family:"IBM Plex Mono",monospace;}
+  .readiness .pct small{font-size:15px;color:var(--muted);}
+  .readiness .rbar{flex:1;min-width:160px;height:7px;border-radius:999px;background:var(--line-soft);overflow:hidden;}
+  .readiness .rbar > span{display:block;height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,var(--signal),var(--online));transition:width .8s var(--ease);}
+  .readiness .rcount{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);}
+  .phase{margin-top:26px;scroll-margin-top:16px;}
+  .phase-head{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+  .phase-num{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;color:var(--signal);border:1px solid var(--line);border-radius:7px;padding:4px 8px;letter-spacing:.05em;min-width:42px;text-align:center;}
   .phase-title{font-size:15px;font-weight:600;letter-spacing:-.01em;}
   .phase-what{font-size:12.5px;color:var(--muted);margin-top:1px;}
   .phase-meta{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--faint);white-space:nowrap;}
   .phase.now .phase-num{color:var(--online);border-color:rgba(77,212,196,.4);}
-
-  .items{
-    background:var(--panel);border:1px solid var(--line);
-    border-radius:var(--radius);overflow:hidden;
-  }
-  .item{
-    display:flex;gap:13px;padding:13px 15px;
-    border-top:1px solid var(--line-soft);cursor:pointer;
-    transition:background .15s;
-  }
+  .items{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+  .item{display:flex;gap:13px;padding:13px 15px;border-top:1px solid var(--line-soft);cursor:pointer;transition:background .15s;position:relative;}
   .item:first-child{border-top:none;}
   .item:hover{background:var(--panel-2);}
   .item:active{background:#202a38;}
-  .check{
-    flex:none;width:20px;height:20px;border-radius:6px;margin-top:1px;
-    border:1.5px solid var(--line);background:transparent;
-    display:flex;align-items:center;justify-content:center;
-    transition:all .18s;
-  }
+  .check{flex:none;width:20px;height:20px;border-radius:6px;margin-top:1px;border:1.5px solid var(--line);background:transparent;display:flex;align-items:center;justify-content:center;transition:all .18s;position:relative;}
   .check svg{width:12px;height:12px;opacity:0;transform:scale(.5);transition:all .18s;}
   .item.done .check{background:var(--online);border-color:var(--online);}
   .item.done .check svg{opacity:1;transform:scale(1);}
+  .check::after{content:"";position:absolute;inset:-4px;border-radius:10px;border:2px solid var(--online);opacity:0;}
+  .item.just .check::after{animation:ripple .5s var(--ease);}
+  @keyframes ripple{0%{opacity:.6;transform:scale(.7);}100%{opacity:0;transform:scale(1.4);}}
   .item-body{flex:1;min-width:0;}
   .item-title{font-size:14px;font-weight:500;letter-spacing:-.005em;}
   .item.done .item-title{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--faint);}
   .item-desc{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.45;}
   .item.done .item-desc{color:var(--faint);}
-
-  /* ---------- command center (future) ---------- */
-  .cc-head{
-    margin:34px 0 12px;display:flex;align-items:center;gap:10px;
-  }
+  .cc-head{margin:34px 0 12px;display:flex;align-items:center;gap:10px;}
   .cc-head h2{font-size:14px;font-weight:600;margin:0;letter-spacing:.02em;}
-  .cc-head .tag{
-    font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.18em;
-    color:var(--faint);border:1px solid var(--line);border-radius:6px;
-    padding:3px 7px;text-transform:uppercase;
-  }
+  .cc-head .tag{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.18em;color:var(--faint);border:1px solid var(--line);border-radius:6px;padding:3px 7px;text-transform:uppercase;}
   .cc-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
-  .module{
-    background:var(--panel);border:1px solid var(--line);border-radius:12px;
-    padding:16px;position:relative;opacity:.62;
-  }
-  .module .m-label{
-    font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.18em;
-    color:var(--muted);text-transform:uppercase;
-  }
+  .module{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;position:relative;opacity:.62;}
+  .module .m-label{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;}
   .module .m-val{font-size:26px;font-weight:600;margin-top:8px;color:var(--faint);font-variant-numeric:tabular-nums;}
-  .module .m-foot{
-    margin-top:10px;display:flex;align-items:center;gap:6px;
-    font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--faint);
-  }
+  .module .m-foot{margin-top:10px;display:flex;align-items:center;gap:6px;font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--faint);}
   .module .m-foot .dot{width:6px;height:6px;}
-
-  footer.foot{
-    margin-top:36px;padding-top:18px;border-top:1px solid var(--line-soft);
-    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
-    font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--faint);
-  }
+  footer.foot{margin-top:36px;padding-top:18px;border-top:1px solid var(--line-soft);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--faint);}
   .sync{display:flex;align-items:center;gap:7px;}
-
-  @media (max-width:560px){
-    .readiness .pct{font-size:44px;}
+  @media (max-width:600px){
     .cc-grid{grid-template-columns:1fr;}
     .phase-meta{display:none;}
+    .node-label{display:none;}
+    .map{padding:18px 12px 14px;}
   }
-  @media (prefers-reduced-motion:reduce){
-    *{animation:none!important;transition:none!important;}
-  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
 </style>
 </head>
 <body>
-
-<!-- ============ PASSWORD GATE ============ -->
-<div id="gate">
-  <div class="gate-card">
-    <div class="gate-mark">AutoBot // restricted</div>
-    <h1>Mission Control</h1>
-    <p>Enter access key to continue.</p>
-    <input id="gate-input" type="password" placeholder="access key" autocomplete="off" />
-    <button id="gate-btn">Unlock</button>
-    <div class="gate-err mono" id="gate-err"></div>
-  </div>
-</div>
-
-<!-- ============ DASHBOARD ============ -->
-<div class="wrap" id="app" style="display:none;">
-
-  <header class="top">
+<div class="wrap" id="app">
+  <header class="top reveal">
     <div class="brand">
-      <div>
-        <div class="logo">AUTOBOT<span class="v">·2.0</span></div>
-        <div class="sub">Mission Control</div>
-      </div>
+      <div class="logo">AUTOBOT<span class="v">&middot;2.0</span></div>
+      <div class="sub">Mission Control</div>
     </div>
-    <div class="status-pill">
-      <span class="dot live" id="status-dot"></span>
-      <span id="status-text">SYSTEM · BUILD PHASE</span>
-    </div>
+    <div class="status-pill"><span class="dot live" id="status-dot"></span><span id="status-text">SYSTEM &middot; BUILD PHASE</span></div>
   </header>
-
-  <!-- readiness gauge -->
-  <section class="readiness">
-    <div class="eyebrow">System readiness</div>
-    <div class="big">
-      <div class="pct"><span id="pct-num">0</span><small>%</small></div>
-      <div class="count mono"><span id="done-count">0</span> / <span id="total-count">0</span> components online</div>
+  <section class="map reveal" style="animation-delay:.05s">
+    <div class="map-top">
+      <div class="map-eyebrow">Mission map</div>
+      <div class="map-read">phase <b id="cur-phase">00</b> of 06 active</div>
     </div>
-    <div class="bar"><span id="bar-fill"></span></div>
+    <div class="track" id="track">
+      <div class="track-line"><span id="track-fill"></span></div>
+    </div>
+    <div class="readiness">
+      <div class="pct"><span id="pct-num">0</span><small>%</small></div>
+      <div class="rbar"><span id="bar-fill"></span></div>
+      <div class="rcount"><span id="done-count">0</span>/<span id="total-count">0</span> done</div>
+    </div>
   </section>
-
-  <!-- phases render here -->
   <div id="phases"></div>
-
-  <!-- future command center -->
-  <div class="cc-head">
+  <div class="cc-head reveal">
     <h2>Command Center</h2>
     <span class="tag">Online at Phase 6</span>
   </div>
-  <div class="cc-grid">
-    <div class="module">
-      <div class="m-label">Ad spend · today</div>
-      <div class="m-val">—</div>
-      <div class="m-foot"><span class="dot off"></span> offline</div>
-    </div>
-    <div class="module">
-      <div class="m-label">Revenue · today</div>
-      <div class="m-val">—</div>
-      <div class="m-foot"><span class="dot off"></span> offline</div>
-    </div>
-    <div class="module">
-      <div class="m-label">Active products</div>
-      <div class="m-val">—</div>
-      <div class="m-foot"><span class="dot off"></span> offline</div>
-    </div>
-    <div class="module">
-      <div class="m-label">Pending approvals</div>
-      <div class="m-val">—</div>
-      <div class="m-foot"><span class="dot off"></span> offline</div>
-    </div>
+  <div class="cc-grid reveal">
+    <div class="module"><div class="m-label">Ad spend &middot; today</div><div class="m-val">&mdash;</div><div class="m-foot"><span class="dot off"></span> offline</div></div>
+    <div class="module"><div class="m-label">Revenue &middot; today</div><div class="m-val">&mdash;</div><div class="m-foot"><span class="dot off"></span> offline</div></div>
+    <div class="module"><div class="m-label">Active products</div><div class="m-val">&mdash;</div><div class="m-foot"><span class="dot off"></span> offline</div></div>
+    <div class="module"><div class="m-label">Pending approvals</div><div class="m-val">&mdash;</div><div class="m-foot"><span class="dot off"></span> offline</div></div>
   </div>
-
-  <footer class="foot">
-    <div class="sync">
-      <span class="dot" id="sync-dot"></span>
-      <span id="sync-text">connecting…</span>
-    </div>
-    <div>AutoBot 2.0 · build console</div>
+  <footer class="foot reveal">
+    <div class="sync"><span class="dot" id="sync-dot"></span><span id="sync-text">connecting&hellip;</span></div>
+    <div>AutoBot 2.0 &middot; build console</div>
   </footer>
-
 </div>
-
 <script>
-/* ============================================================
-   1. CONFIG
-   ============================================================ */
 const SUPABASE_URL = "https://ymxkszervsowzzprniws.supabase.co";
 const SUPABASE_KEY = "sb_publishable_M2DoGpjaiYSBji5DVkb5-Q_-UpMksbc";
-const ACCESS_KEY   = "autobot";   // ← change this anytime (soft gate, client-side)
 const TABLE        = "checklist";
-
-/* ============================================================
-   2. BUILD ROADMAP — the V2 plan
-   ============================================================ */
 const PHASES = [
-  {
-    n:"00", now:true, title:"Command Center", what:"This console — your single source of truth across every device.",
-    items:[
-      ["cc_supabase","Supabase project live","Cloud database that stores your checkmarks so they sync everywhere.",true],
-      ["cc_keys","URL + publishable key captured","The two values that let this dashboard talk to Supabase.",true],
-      ["cc_dashboard","Dashboard built","This mission-control shell — roadmap now, command center later.",false],
-      ["cc_table","Checklist table created","The table in Supabase where each item's checked state is saved.",false],
-      ["cc_deploy","Deployed to GitHub Pages","Goes live at a URL you can open from phone, iPad, MacBook, Mac Mini.",false],
-      ["cc_gate","Access key active","Soft password gate so the console isn't open to the public.",false],
-    ]
-  },
-  {
-    n:"01", title:"Learning Loop", what:"The spine. The only part that makes the system smarter over time.",
-    items:[
-      ["ll_log","Outcome log","Records every launch AND every rejection: prediction, confidence, signals, real result.",false],
-      ["ll_reweight","Reweighting engine","Compares each prediction to actual profit, then adjusts signal weights.",false],
-      ["ll_attr","Attribution","Separates a bad product pick (Engine 1) from a weak ad (Engine 3) — so the right thing gets blamed.",false],
-      ["ll_explore","Exploration slice","Reserves some launches to test uncertain bets, so it keeps discovering new winners.",false],
-      ["ll_conf","Confidence weighting","A confident miss teaches more than a coin-flip miss — losses are weighted by how sure it was.",false],
-      ["ll_seed","Seed → regression","Starts on known dropshipping rules, switches to real data regression at ~20 outcomes.",false],
-    ]
-  },
-  {
-    n:"02", title:"Engine 1 · Trend Intelligence", what:"Predicts winners early. Sets the ceiling for everything downstream.",
-    items:[
-      ["e1_signals","Signal aggregation","Pulls demand acceleration, social traction, early sales velocity, saturation, margin.",false],
-      ["e1_traj","Trajectory scoring","Scores rate-of-change in demand, not static popularity — catches products before saturation.",false],
-      ["e1_gate","Confidence gate ≥ 8.89","Nothing launches unless the engine clears its confidence threshold.",false],
-      ["e1_fix","Fix verdict contradiction","No more 'market saturated' followed by a LAUNCH call — analysis and verdict must agree.",false],
-      ["e1_fbads","Add Facebook Ad Library","Second signal source beyond Google Trends — most reliable next feed.",false],
-    ]
-  },
-  {
-    n:"03", title:"Engine 2 · Supplier Intelligence", what:"Sources each winner from the best distributor, not just CJ.",
-    items:[
-      ["e2_multi","Multi-distributor sourcing","Looks beyond CJ to any dropship supplier with stock and a real margin.",false],
-      ["e2_pick","Best margin + reliability","Picks the supplier per product on price, shipping speed, and reliability.",false],
-    ]
-  },
-  {
-    n:"04", title:"Engine 3 · Launch", what:"Builds the page, makes the ads, routes to the right store, goes live.",
-    items:[
-      ["e3_page","Converting product page","Auto-builds a product page designed to actually sell.",false],
-      ["e3_static","Static ad generation","AI-generated image ads, ready to run.",false],
-      ["e3_video","Video ad generation","AI-generated video ads — the piece you just proved works.",false],
-      ["e3_route","Niche routing","Sends each winner to the matching store (pet → pets, kitchen → kitchen).",false],
-      ["e3_launch","Auto-launch on approval","One tap from you and it's live with ads running.",false],
-    ]
-  },
-  {
-    n:"05", title:"Engine 4 · Monitor", what:"Scales what works, kills what doesn't — on math, not feelings.",
-    items:[
-      ["e4_rules","Scale / kill rules","Automatic decisions on net profit per ad dollar — no emotional attachment.",false],
-      ["e4_spend","Spend tracking","Watches spend per product so nothing quietly bleeds.",false],
-    ]
-  },
-  {
-    n:"06", title:"Command Center · Live", what:"This console takes the controls.",
-    items:[
-      ["cc6_approve","Approve / launch from here","Approve ads and launches straight from the dashboard.",false],
-      ["cc6_money","Live spend + revenue","Real numbers replace the offline modules above.",false],
-      ["cc6_active","Active products view","See everything running, at a glance.",false],
-    ]
-  },
+  {n:"00",short:"Command\nCenter",title:"Command Center",what:"This console — your single source of truth across every device.",items:[
+    ["cc_supabase","Cloud storage connected","Saves your checkmarks online so they show up on every device.",true],
+    ["cc_keys","Connection keys saved","The values that let this dashboard talk to the cloud storage.",true],
+    ["cc_dashboard","Dashboard built","This console — your roadmap now, your command center later.",false],
+    ["cc_table","Checklist storage set up","The spot in the cloud where each checkbox is saved.",false],
+    ["cc_deploy","Published online","Live at a web link you can open from phone, iPad, MacBook, Mac Mini.",false],
+  ]},
+  {n:"01",short:"Learning\nLoop",title:"Learning Loop",what:"The part that makes the system smarter over time. The spine.",items:[
+    ["ll_log","Record every result","Logs every product it launches AND every one it skips — the prediction, how sure it was, and what actually happened.",false],
+    ["ll_reweight","Learn what predicts winners","After each result, it trusts the clues that picked winners more, and the ones that picked losers less.",false],
+    ["ll_attr","Know what went wrong","When something flops, it works out whether it was a bad product pick or just a weak ad.",false],
+    ["ll_explore","Keep testing new bets","Saves a few launches to try uncertain products, so it keeps finding new winners instead of repeating itself.",false],
+    ["ll_conf","Learn most from confident misses","A loss it was sure about teaches it more than a coin-flip guess that missed.",false],
+    ["ll_seed","Start on rules, switch to real data","Begins with proven rules of thumb, then learns from your own sales after about 20 results.",false],
+  ]},
+  {n:"02",short:"Engine 1\nTrends",title:"Engine 1 · Trend Intelligence",what:"Predicts winners early. Sets the ceiling for everything else.",items:[
+    ["e1_signals","Gather the buying clues","Pulls together demand, social buzz, early sales speed, competition, and profit margin for each product.",false],
+    ["e1_traj","Catch products on the rise","Scores how fast demand is climbing — so it catches products before everyone else piles in.",false],
+    ["e1_gate","Only launch high-confidence picks","Nothing goes live unless the system is genuinely confident it'll sell.",false],
+    ["e1_fix","Stop the engine contradicting itself","No more calling a market 'too crowded' and then saying launch anyway.",false],
+    ["e1_fbads","Add a second source of clues","Pulls demand signals from Facebook's ad library, not just Google Trends.",false],
+  ]},
+  {n:"03",short:"Engine 2\nSupplier",title:"Engine 2 · Supplier Intelligence",what:"Sources each winner from the best supplier, not just CJ.",items:[
+    ["e2_multi","Source from any supplier","Looks beyond CJ to any dropship supplier that has the product in stock with a real margin.",false],
+    ["e2_pick","Pick the best supplier","Chooses the supplier with the best mix of price, shipping speed, and reliability.",false],
+  ]},
+  {n:"04",short:"Engine 3\nLaunch",title:"Engine 3 · Launch",what:"Builds the page, makes the ads, sends it to the right store, goes live.",items:[
+    ["e3_page","Build the product page","Auto-builds a product page designed to actually sell.",false],
+    ["e3_static","Make image ads","AI creates image ads, ready to run.",false],
+    ["e3_video","Make video ads","AI creates video ads — the piece you just proved works.",false],
+    ["e3_route","Send it to the right store","Routes each winner to the matching store (pet product → pets store).",false],
+    ["e3_launch","Go live on your approval","One tap from you and it's live with ads running.",false],
+  ]},
+  {n:"05",short:"Engine 4\nMonitor",title:"Engine 4 · Monitor",what:"Scales what works, kills what doesn't — on math, not feelings.",items:[
+    ["e4_rules","Scale winners, kill losers","Automatically puts more budget behind what's profitable and shuts down what isn't.",false],
+    ["e4_spend","Watch the spending","Tracks ad spend per product so nothing quietly drains money.",false],
+  ]},
+  {n:"06",short:"Command\nLive",title:"Command Center · Live",what:"This console takes the controls.",items:[
+    ["cc6_approve","Approve launches here","Approve ads and launches straight from this dashboard.",false],
+    ["cc6_money","See live money","Real spend and revenue numbers replace the offline boxes above.",false],
+    ["cc6_active","See everything running","Every live product, at a glance.",false],
+  ]},
 ];
-
-/* ============================================================
-   3. STATE + SUPABASE
-   ============================================================ */
-let sb = null;
-let online = false;
-const state = {};            // item_id -> bool (in-memory mirror)
-
-// build default state from roadmap
-PHASES.forEach(p => p.items.forEach(([id,_t,_d,def]) => { state[id] = !!def; }));
-
-function setSync(ok, label){
-  online = ok;
-  document.getElementById("sync-dot").style.background = ok ? "var(--online)" : "var(--faint)";
-  document.getElementById("sync-dot").className = "dot" + (ok ? " live" : "");
-  document.getElementById("sync-text").textContent = label;
+let sb=null, online=false, displayedPct=0;
+const state={};
+PHASES.forEach(function(p){p.items.forEach(function(a){state[a[0]]=!!a[3];});});
+function setSync(ok,label){
+  online=ok;
+  var d=document.getElementById("sync-dot");
+  d.style.background = ok ? "var(--online)" : "var(--faint)";
+  d.className = "dot" + (ok ? " live" : "");
+  document.getElementById("sync-text").textContent=label;
 }
-
 async function initSupabase(){
   try{
     if(!window.supabase) throw new Error("client not loaded");
-    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    const { data, error } = await sb.from(TABLE).select("item_id, checked");
-    if(error) throw error;
-    if(Array.isArray(data)){
-      data.forEach(row => { if(row.item_id in state) state[row.item_id] = !!row.checked; });
-    }
-    setSync(true, "synced · live across devices");
-  }catch(e){
-    // graceful fallback so the console still works for viewing/approval
-    setSync(false, "offline · changes won't save yet");
-  }
+    sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    var r=await sb.from(TABLE).select("item_id, checked");
+    if(r.error) throw r.error;
+    if(Array.isArray(r.data)) r.data.forEach(function(row){ if(row.item_id in state) state[row.item_id]=!!row.checked; });
+    setSync(true,"synced · live across devices");
+  }catch(e){ setSync(false,"offline · changes won't save yet"); }
 }
-
-async function saveItem(id, checked){
-  if(!sb || !online) return;
-  try{
-    await sb.from(TABLE).upsert(
-      { item_id:id, checked:checked, updated_at:new Date().toISOString() },
-      { onConflict:"item_id" }
-    );
-  }catch(e){ setSync(false,"offline · last change didn't save"); }
+async function saveItem(id,checked){
+  if(!sb||!online) return;
+  try{ await sb.from(TABLE).upsert({item_id:id,checked:checked,updated_at:new Date().toISOString()},{onConflict:"item_id"}); }
+  catch(e){ setSync(false,"offline · last change didn't save"); }
 }
-
-/* ============================================================
-   4. RENDER
-   ============================================================ */
-const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="#0B0E14" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>';
-
+function phaseCount(p){ return p.items.filter(function(a){return state[a[0]];}).length; }
+function phaseFrac(p){ return p.items.length ? phaseCount(p)/p.items.length : 0; }
+function activeIndex(){
+  for(var i=0;i<PHASES.length;i++){ if(phaseFrac(PHASES[i])<1) return i; }
+  return PHASES.length-1;
+}
+var R=15, C=2*Math.PI*R;
+function buildMap(){
+  var track=document.getElementById("track");
+  Array.prototype.slice.call(track.querySelectorAll(".node")).forEach(function(n){n.remove();});
+  var act=activeIndex();
+  PHASES.forEach(function(p,i){
+    var frac=phaseFrac(p);
+    var done=frac>=1;
+    var active=(i===act && !done);
+    var node=document.createElement("div");
+    node.className="node"+(done?" done":"")+(active?" active":"");
+    node.innerHTML=
+      '<div class="node-ring">'+
+        '<svg width="36" height="36" viewBox="0 0 36 36">'+
+          '<circle class="track-c" cx="18" cy="18" r="'+R+'" fill="none" stroke-width="3"></circle>'+
+          '<circle class="fill-c" cx="18" cy="18" r="'+R+'" fill="none" stroke-width="3" stroke-dasharray="'+C+'" stroke-dashoffset="'+(C*(1-frac))+'"></circle>'+
+        '</svg>'+
+        '<div class="node-core">'+p.n+'</div>'+
+        '<div class="node-done-fill"><svg viewBox="0 0 24 24" fill="none" stroke="#0B0E14" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div>'+
+      '</div>'+
+      '<div class="node-label">'+p.short.replace("\n","<br>")+'</div>';
+    node.addEventListener("click",function(){
+      var el=document.getElementById("phase-"+p.n);
+      if(el) el.scrollIntoView({behavior:"smooth",block:"start"});
+    });
+    track.appendChild(node);
+  });
+  var totalFrac=PHASES.reduce(function(s,p){return s+phaseFrac(p);},0)/PHASES.length;
+  document.getElementById("track-fill").style.width=(totalFrac*100)+"%";
+  document.getElementById("cur-phase").textContent=PHASES[act].n;
+}
+var CHECK_ITEM='<svg viewBox="0 0 24 24" fill="none" stroke="#0B0E14" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>';
 function render(){
-  const host = document.getElementById("phases");
-  host.innerHTML = "";
-  PHASES.forEach(p => {
-    const done = p.items.filter(([id]) => state[id]).length;
-    const total = p.items.length;
-    const sec = document.createElement("section");
-    sec.className = "phase" + (p.now ? " now" : "");
-    sec.innerHTML = `
-      <div class="phase-head">
-        <span class="phase-num mono">${p.n}</span>
-        <div>
-          <div class="phase-title">${p.title}</div>
-          <div class="phase-what">${p.what}</div>
-        </div>
-        <span class="phase-meta">${done}/${total}</span>
-      </div>
-      <div class="items"></div>`;
-    const list = sec.querySelector(".items");
-    p.items.forEach(([id,title,desc]) => {
-      const row = document.createElement("div");
-      row.className = "item" + (state[id] ? " done" : "");
-      row.innerHTML = `
-        <div class="check">${CHECK_SVG}</div>
-        <div class="item-body">
-          <div class="item-title">${title}</div>
-          <div class="item-desc">${desc}</div>
-        </div>`;
-      row.addEventListener("click", () => toggle(id, row));
+  var host=document.getElementById("phases");
+  host.innerHTML="";
+  PHASES.forEach(function(p,pi){
+    var total=p.items.length, done=phaseCount(p);
+    var sec=document.createElement("section");
+    sec.className="phase reveal"+(p.n===PHASES[activeIndex()].n?" now":"");
+    sec.id="phase-"+p.n;
+    sec.style.animationDelay=(0.12+pi*0.05)+"s";
+    sec.innerHTML='<div class="phase-head"><span class="phase-num">'+p.n+'</span><div><div class="phase-title">'+p.title+'</div><div class="phase-what">'+p.what+'</div></div><span class="phase-meta" id="meta-'+p.n+'">'+done+'/'+total+'</span></div><div class="items"></div>';
+    var list=sec.querySelector(".items");
+    p.items.forEach(function(a){
+      var id=a[0],title=a[1],desc=a[2];
+      var row=document.createElement("div");
+      row.className="item"+(state[id]?" done":"");
+      row.dataset.phase=p.n;
+      row.innerHTML='<div class="check">'+CHECK_ITEM+'</div><div class="item-body"><div class="item-title">'+title+'</div><div class="item-desc">'+desc+'</div></div>';
+      row.addEventListener("click",function(){toggle(id,row);});
       list.appendChild(row);
     });
     host.appendChild(sec);
   });
-  updateGauge();
+  buildMap();
+  updateGauge(true);
 }
-
-function toggle(id, row){
-  state[id] = !state[id];
-  row.classList.toggle("done", state[id]);
-  // update that phase's counter
-  render();           // simplest reliable redraw; keeps counters + gauge correct
-  saveItem(id, state[id]);
+function toggle(id,row){
+  state[id]=!state[id];
+  var on=state[id];
+  row.classList.toggle("done",on);
+  if(on){ row.classList.add("just"); setTimeout(function(){row.classList.remove("just");},520); }
+  var pn=row.dataset.phase;
+  var p=PHASES.find(function(x){return x.n===pn;});
+  document.getElementById("meta-"+pn).textContent=phaseCount(p)+"/"+p.items.length;
+  document.querySelectorAll(".phase").forEach(function(s){s.classList.remove("now");});
+  var act=document.getElementById("phase-"+PHASES[activeIndex()].n);
+  if(act) act.classList.add("now");
+  buildMap();
+  updateGauge(false);
+  saveItem(id,on);
 }
-
-function updateGauge(){
-  const ids = Object.keys(state);
-  const total = ids.length;
-  const done = ids.filter(k => state[k]).length;
-  const pct = total ? Math.round((done/total)*100) : 0;
-  document.getElementById("pct-num").textContent = pct;
-  document.getElementById("done-count").textContent = done;
-  document.getElementById("total-count").textContent = total;
-  document.getElementById("bar-fill").style.width = pct + "%";
+function updateGauge(instant){
+  var ids=Object.keys(state), total=ids.length, done=ids.filter(function(k){return state[k];}).length;
+  var pct=total?Math.round((done/total)*100):0;
+  document.getElementById("done-count").textContent=done;
+  document.getElementById("total-count").textContent=total;
+  document.getElementById("bar-fill").style.width=pct+"%";
+  countTo(pct, instant?0:480);
 }
-
-/* ============================================================
-   5. GATE
-   ============================================================ */
-function unlock(){
-  const val = document.getElementById("gate-input").value.trim();
-  if(val === ACCESS_KEY){
-    document.getElementById("gate").style.display = "none";
-    document.getElementById("app").style.display = "block";
-    boot();
-  }else{
-    document.getElementById("gate-err").textContent = "Wrong key. Try again.";
-    document.getElementById("gate-input").value = "";
+function countTo(target,dur){
+  var el=document.getElementById("pct-num");
+  if(dur===0){displayedPct=target;el.textContent=target;return;}
+  var start=displayedPct, t0=performance.now();
+  function step(t){
+    var k=Math.min(1,(t-t0)/dur);
+    var e=1-Math.pow(1-k,3);
+    el.textContent=Math.round(start+(target-start)*e);
+    if(k<1) requestAnimationFrame(step); else displayedPct=target;
   }
+  requestAnimationFrame(step);
 }
-document.getElementById("gate-btn").addEventListener("click", unlock);
-document.getElementById("gate-input").addEventListener("keydown", e => { if(e.key==="Enter") unlock(); });
-window.addEventListener("load", () => document.getElementById("gate-input").focus());
-
 async function boot(){
-  render();                 // draw immediately with defaults
-  await initSupabase();     // then pull saved state
-  render();                 // redraw with synced values
+  render();
+  await initSupabase();
+  render();
 }
+window.addEventListener("load",boot);
 </script>
 </body>
 </html>
