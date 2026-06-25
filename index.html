@@ -68,6 +68,10 @@
   .readiness .rbar{flex:1;min-width:160px;height:7px;border-radius:999px;background:var(--line-soft);overflow:hidden;}
   .readiness .rbar > span{display:block;height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,var(--signal),var(--online));transition:width .8s var(--ease);}
   .readiness .rcount{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);}
+  .map-note{margin-top:14px;padding-top:13px;border-top:1px solid var(--line-soft);font-size:12px;color:var(--muted);line-height:1.55;}
+  .map-note .tg{font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:1px 5px;border-radius:4px;}
+  .map-note .tg.teal{color:#9FE3D8;background:rgba(77,212,196,.1);border:1px solid rgba(77,212,196,.28);}
+  .map-note .tg.amber{color:#E9D7AE;background:rgba(245,183,72,.09);border:1px solid rgba(245,183,72,.26);}
   .phase{margin-top:26px;scroll-margin-top:16px;}
   .phase-head{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
   .phase-num{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;color:var(--signal);border:1px solid var(--line);border-radius:7px;padding:4px 8px;letter-spacing:.05em;min-width:42px;text-align:center;}
@@ -75,8 +79,10 @@
   .phase-what{font-size:12.5px;color:var(--muted);margin-top:1px;}
   .phase-meta{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--faint);white-space:nowrap;}
   .phase.now .phase-num{color:var(--online);border-color:rgba(77,212,196,.4);}
+  .phase-banner{display:flex;gap:9px;align-items:flex-start;margin-bottom:10px;padding:11px 13px;background:rgba(245,183,72,.06);border:1px solid rgba(245,183,72,.22);border-radius:10px;font-size:12px;color:#E9D7AE;line-height:1.5;}
+  .phase-banner svg{flex:none;width:15px;height:15px;margin-top:1px;stroke:var(--signal);}
   .items{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
-  .item{display:flex;gap:13px;padding:13px 15px;border-top:1px solid var(--line-soft);cursor:pointer;transition:background .15s;position:relative;}
+  .item{display:flex;gap:13px;padding:14px 15px;border-top:1px solid var(--line-soft);cursor:pointer;transition:background .15s;position:relative;}
   .item:first-child{border-top:none;}
   .item:hover{background:var(--panel-2);}
   .item:active{background:#202a38;}
@@ -88,9 +94,13 @@
   .item.just .check::after{animation:ripple .5s var(--ease);}
   @keyframes ripple{0%{opacity:.6;transform:scale(.7);}100%{opacity:0;transform:scale(1.4);}}
   .item-body{flex:1;min-width:0;}
-  .item-title{font-size:14px;font-weight:500;letter-spacing:-.005em;}
+  .item-title-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .item-title{font-size:14.5px;font-weight:500;letter-spacing:-.005em;}
   .item.done .item-title{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--faint);}
-  .item-desc{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.45;}
+  .item-tag{font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border-radius:5px;white-space:nowrap;}
+  .tag-v1{color:#9FE3D8;background:rgba(77,212,196,.1);border:1px solid rgba(77,212,196,.28);}
+  .tag-data{color:#E9D7AE;background:rgba(245,183,72,.09);border:1px solid rgba(245,183,72,.26);}
+  .item-desc{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.5;}
   .item.done .item-desc{color:var(--faint);}
   .cc-head{margin:34px 0 12px;display:flex;align-items:center;gap:10px;}
   .cc-head h2{font-size:14px;font-weight:600;margin:0;letter-spacing:.02em;}
@@ -134,6 +144,7 @@
       <div class="rbar"><span id="bar-fill"></span></div>
       <div class="rcount"><span id="done-count">0</span>/<span id="total-count">0</span> done</div>
     </div>
+    <div class="map-note">Big-picture milestones, in rough order. <span class="tg teal">v1 proven</span> = already built and working. <span class="tg amber">needs live data</span> = can't finish until real products launch. The order's a guide, not a hard gate.</div>
   </section>
   <div id="phases"></div>
   <div class="cc-head reveal">
@@ -156,49 +167,40 @@ const SUPABASE_URL = "https://ymxkszervsowzzprniws.supabase.co";
 const SUPABASE_KEY = "sb_publishable_M2DoGpjaiYSBji5DVkb5-Q_-UpMksbc";
 const TABLE        = "checklist";
 const PHASES = [
-  {n:"00",short:"Command\nCenter",title:"Command Center",what:"This console — your single source of truth across every device.",items:[
-    ["cc_supabase","Cloud storage connected","Saves your checkmarks online so they show up on every device.",true],
-    ["cc_keys","Connection keys saved","The values that let this dashboard talk to the cloud storage.",true],
-    ["cc_dashboard","Dashboard built","This console — your roadmap now, your command center later.",false],
-    ["cc_table","Checklist storage set up","The spot in the cloud where each checkbox is saved.",false],
-    ["cc_deploy","Published online","Live at a web link you can open from phone, iPad, MacBook, Mac Mini.",false],
+  {n:"00",short:"Command\nCenter",title:"Command Center",what:"Your control panel — one source of truth on every device.",items:[
+    ["cc2_built","Console built & live","The dashboard you're looking at, published online and open from any device.",true],
+    ["cc2_synced","Synced across devices","Cloud storage so your checkmarks follow you from phone to laptop to Mac.",true],
   ]},
-  {n:"01",short:"Learning\nLoop",title:"Learning Loop",what:"The part that makes the system smarter over time. The spine.",items:[
-    ["ll_log","Record every result","Logs every product it launches AND every one it skips — the prediction, how sure it was, and what actually happened.",false],
-    ["ll_reweight","Learn what predicts winners","After each result, it trusts the clues that picked winners more, and the ones that picked losers less.",false],
-    ["ll_attr","Know what went wrong","When something flops, it works out whether it was a bad product pick or just a weak ad.",false],
-    ["ll_explore","Keep testing new bets","Saves a few launches to try uncertain products, so it keeps finding new winners instead of repeating itself.",false],
-    ["ll_conf","Learn most from confident misses","A loss it was sure about teaches it more than a coin-flip guess that missed.",false],
-    ["ll_seed","Start on rules, switch to real data","Begins with proven rules of thumb, then learns from your own sales after about 20 results.",false],
+  {n:"01",short:"Learning\nLoop",title:"Learning Loop",what:"The part that makes the system smarter over time. The spine.",
+   banner:"Built early, but it only sharpens once real products launch and feed it results — it keeps improving for the life of the system.",
+   items:[
+    ["ll2_record","Record every result","Log every launch and every skip: the prediction, the confidence, and what actually happened.",false],
+    ["ll2_learn","Learn & reweight","After each result, trust the clues that pick winners and drop the ones that don't.",false,"data"],
+    ["ll2_real","Switch to real data","Start on proven rules of thumb, then learn from your own sales once enough launches exist.",false,"data"],
   ]},
   {n:"02",short:"Engine 1\nTrends",title:"Engine 1 · Trend Intelligence",what:"Predicts winners early. Sets the ceiling for everything else.",items:[
-    ["e1_signals","Gather the buying clues","Pulls together demand, social buzz, early sales speed, competition, and profit margin for each product.",false],
-    ["e1_traj","Catch products on the rise","Scores how fast demand is climbing — so it catches products before everyone else piles in.",false],
-    ["e1_gate","Only launch high-confidence picks","Nothing goes live unless the system is genuinely confident it'll sell.",false],
-    ["e1_fix","Stop the engine contradicting itself","No more calling a market 'too crowded' and then saying launch anyway.",false],
-    ["e1_fbads","Add a second source of clues","Pulls demand signals from Facebook's ad library, not just Google Trends.",false],
+    ["e1b_signals","Gather the buying clues","Pull together demand, social buzz, early sales, competition, and margin for each product.",false,"v1"],
+    ["e1b_score","Score products on the rise","Rank by how fast demand is climbing, and only surface high-confidence picks.",false],
+    ["e1b_sharpen","Sharpen the judgment","Fix the contradictions and add more signal sources so predictions get sharper.",false],
   ]},
   {n:"03",short:"Engine 2\nSupplier",title:"Engine 2 · Supplier Intelligence",what:"Sources each winner from the best supplier, not just CJ.",items:[
-    ["e2_multi","Source from any supplier","Looks beyond CJ to any dropship supplier that has the product in stock with a real margin.",false],
-    ["e2_pick","Pick the best supplier","Chooses the supplier with the best mix of price, shipping speed, and reliability.",false],
+    ["e2b_source","Source from any supplier","Look beyond CJ to any supplier with the product in stock and a real margin.",false],
+    ["e2b_pick","Pick the best one","Choose per product on price, shipping speed, and reliability.",false],
   ]},
   {n:"04",short:"Engine 3\nLaunch",title:"Engine 3 · Launch",what:"Builds the page, makes the ads, sends it to the right store, goes live.",items:[
-    ["e3_page","Build the product page","Auto-builds a product page designed to actually sell.",false],
-    ["e3_static","Make image ads","AI creates image ads, ready to run.",false],
-    ["e3_video","Make video ads","AI creates video ads — the piece you just proved works.",false],
-    ["e3_route","Send it to the right store","Routes each winner to the matching store (pet product → pets store).",false],
-    ["e3_launch","Go live on your approval","One tap from you and it's live with ads running.",false],
+    ["e3b_build","Build the page & the ads","Auto-build a product page and generate image and video ads, ready to run.",false,"v1"],
+    ["e3b_launch","Route & launch on approval","Send each winner to the matching store and go live once you approve.",false,"v1"],
   ]},
   {n:"05",short:"Engine 4\nMonitor",title:"Engine 4 · Monitor",what:"Scales what works, kills what doesn't — on math, not feelings.",items:[
-    ["e4_rules","Scale winners, kill losers","Automatically puts more budget behind what's profitable and shuts down what isn't.",false],
-    ["e4_spend","Watch the spending","Tracks ad spend per product so nothing quietly drains money.",false],
+    ["e4b_scale","Scale winners, kill losers","Push budget behind what's profitable and shut down what isn't.",false],
+    ["e4b_spend","Watch the spend","Track ad spend per product so nothing quietly drains money.",false],
   ]},
   {n:"06",short:"Command\nLive",title:"Command Center · Live",what:"This console takes the controls.",items:[
-    ["cc6_approve","Approve launches here","Approve ads and launches straight from this dashboard.",false],
-    ["cc6_money","See live money","Real spend and revenue numbers replace the offline boxes above.",false],
-    ["cc6_active","See everything running","Every live product, at a glance.",false],
+    ["cc6b_controls","Take the controls","Approve and launch straight from this dashboard.",false],
+    ["cc6b_money","See the money live","Real spend, revenue, and active products replace the offline panels above.",false],
   ]},
 ];
+var TAGS={v1:["tag-v1","v1 proven"],data:["tag-data","needs live data"]};
 let sb=null, online=false, displayedPct=0;
 const state={};
 PHASES.forEach(function(p){p.items.forEach(function(a){state[a[0]]=!!a[3];});});
@@ -262,6 +264,7 @@ function buildMap(){
   document.getElementById("cur-phase").textContent=PHASES[act].n;
 }
 var CHECK_ITEM='<svg viewBox="0 0 24 24" fill="none" stroke="#0B0E14" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>';
+var INFO_SVG='<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>';
 function render(){
   var host=document.getElementById("phases");
   host.innerHTML="";
@@ -271,14 +274,17 @@ function render(){
     sec.className="phase reveal"+(p.n===PHASES[activeIndex()].n?" now":"");
     sec.id="phase-"+p.n;
     sec.style.animationDelay=(0.12+pi*0.05)+"s";
-    sec.innerHTML='<div class="phase-head"><span class="phase-num">'+p.n+'</span><div><div class="phase-title">'+p.title+'</div><div class="phase-what">'+p.what+'</div></div><span class="phase-meta" id="meta-'+p.n+'">'+done+'/'+total+'</span></div><div class="items"></div>';
+    var bannerHTML = p.banner ? '<div class="phase-banner">'+INFO_SVG+'<div>'+p.banner+'</div></div>' : '';
+    sec.innerHTML='<div class="phase-head"><span class="phase-num">'+p.n+'</span><div><div class="phase-title">'+p.title+'</div><div class="phase-what">'+p.what+'</div></div><span class="phase-meta" id="meta-'+p.n+'">'+done+'/'+total+'</span></div>'+bannerHTML+'<div class="items"></div>';
     var list=sec.querySelector(".items");
     p.items.forEach(function(a){
-      var id=a[0],title=a[1],desc=a[2];
+      var id=a[0],title=a[1],desc=a[2],tag=a[4];
+      var tagHTML="";
+      if(tag && TAGS[tag]){ tagHTML='<span class="item-tag '+TAGS[tag][0]+'">'+TAGS[tag][1]+'</span>'; }
       var row=document.createElement("div");
       row.className="item"+(state[id]?" done":"");
       row.dataset.phase=p.n;
-      row.innerHTML='<div class="check">'+CHECK_ITEM+'</div><div class="item-body"><div class="item-title">'+title+'</div><div class="item-desc">'+desc+'</div></div>';
+      row.innerHTML='<div class="check">'+CHECK_ITEM+'</div><div class="item-body"><div class="item-title-row"><div class="item-title">'+title+'</div>'+tagHTML+'</div><div class="item-desc">'+desc+'</div></div>';
       row.addEventListener("click",function(){toggle(id,row);});
       list.appendChild(row);
     });
